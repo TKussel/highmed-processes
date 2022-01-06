@@ -1,0 +1,446 @@
+package org.highmed.dsf.fhir.profile;
+
+import static org.highmed.dsf.bpe.ConstantsBase.CODESYSTEM_HIGHMED_BPMN;
+import static org.highmed.dsf.bpe.ConstantsBase.CODESYSTEM_HIGHMED_BPMN_VALUE_BUSINESS_KEY;
+import static org.highmed.dsf.bpe.ConstantsBase.CODESYSTEM_HIGHMED_BPMN_VALUE_CORRELATION_KEY;
+import static org.highmed.dsf.bpe.ConstantsBase.CODESYSTEM_HIGHMED_BPMN_VALUE_ERROR;
+import static org.highmed.dsf.bpe.ConstantsBase.CODESYSTEM_HIGHMED_BPMN_VALUE_MESSAGE_NAME;
+import static org.highmed.dsf.bpe.ConstantsBase.EXTENSION_HIGHMED_GROUP_ID;
+import static org.highmed.dsf.bpe.ConstantsBase.NAMINGSYSTEM_HIGHMED_ORGANIZATION_IDENTIFIER;
+import static org.highmed.dsf.bpe.ConstantsMpcFeasibility.CODESYSTEM_HIGHMED_MPCFEASIBILITY;
+import static org.highmed.dsf.bpe.ConstantsMpcFeasibility.CODESYSTEM_HIGHMED_MPCFEASIBILITY_VALUE_BLOOM_FILTER_CONFIG;
+import static org.highmed.dsf.bpe.ConstantsMpcFeasibility.CODESYSTEM_HIGHMED_MPCFEASIBILITY_VALUE_MULTI_MEDIC_RESULT;
+import static org.highmed.dsf.bpe.ConstantsMpcFeasibility.CODESYSTEM_HIGHMED_MPCFEASIBILITY_VALUE_NEEDS_CONSENT_CHECK;
+import static org.highmed.dsf.bpe.ConstantsMpcFeasibility.CODESYSTEM_HIGHMED_MPCFEASIBILITY_VALUE_NEEDS_RECORD_LINKAGE;
+import static org.highmed.dsf.bpe.ConstantsMpcFeasibility.CODESYSTEM_HIGHMED_MPCFEASIBILITY_VALUE_PARTICIPATING_MEDICS_COUNT;
+import static org.highmed.dsf.bpe.ConstantsMpcFeasibility.CODESYSTEM_HIGHMED_MPCFEASIBILITY_VALUE_PARTICIPATING_MEDIC_CORRELATION_KEY;
+import static org.highmed.dsf.bpe.ConstantsMpcFeasibility.CODESYSTEM_HIGHMED_MPCFEASIBILITY_VALUE_RESEARCH_STUDY_REFERENCE;
+import static org.highmed.dsf.bpe.ConstantsMpcFeasibility.CODESYSTEM_HIGHMED_MPCFEASIBILITY_VALUE_SINGLE_MEDIC_RESULT;
+import static org.highmed.dsf.bpe.ConstantsMpcFeasibility.CODESYSTEM_HIGHMED_MPCFEASIBILITY_VALUE_SINGLE_MEDIC_RESULT_REFERENCE;
+import static org.highmed.dsf.bpe.ConstantsMpcFeasibility.PROFILE_HIGHMED_TASK_COMPUTE_MPCFEASIBILITY;
+import static org.highmed.dsf.bpe.ConstantsMpcFeasibility.PROFILE_HIGHMED_TASK_COMPUTE_MPCFEASIBILITY_MESSAGE_NAME;
+import static org.highmed.dsf.bpe.ConstantsMpcFeasibility.PROFILE_HIGHMED_TASK_COMPUTE_MPCFEASIBILITY_PROCESS_URI_AND_LATEST_VERSION;
+import static org.highmed.dsf.bpe.ConstantsMpcFeasibility.PROFILE_HIGHMED_TASK_ERROR_MPCFEASIBILITY;
+import static org.highmed.dsf.bpe.ConstantsMpcFeasibility.PROFILE_HIGHMED_TASK_ERROR_MPCFEASIBILITY_MESSAGE_NAME;
+import static org.highmed.dsf.bpe.ConstantsMpcFeasibility.PROFILE_HIGHMED_TASK_EXECUTE_MPCFEASIBILITY;
+import static org.highmed.dsf.bpe.ConstantsMpcFeasibility.PROFILE_HIGHMED_TASK_EXECUTE_MPCFEASIBILITY_MESSAGE_NAME;
+import static org.highmed.dsf.bpe.ConstantsMpcFeasibility.PROFILE_HIGHMED_TASK_EXECUTE_MPCFEASIBILITY_PROCESS_URI_AND_LATEST_VERSION;
+import static org.highmed.dsf.bpe.ConstantsMpcFeasibility.PROFILE_HIGHMED_TASK_MULTI_MEDIC_RESULT_MPCFEASIBILITY;
+import static org.highmed.dsf.bpe.ConstantsMpcFeasibility.PROFILE_HIGHMED_TASK_MULTI_MEDIC_RESULT_MPCFEASIBILITY_MESSAGE_NAME;
+import static org.highmed.dsf.bpe.ConstantsMpcFeasibility.PROFILE_HIGHMED_TASK_REQUEST_MPCFEASIBILITY;
+import static org.highmed.dsf.bpe.ConstantsMpcFeasibility.PROFILE_HIGHMED_TASK_REQUEST_MPCFEASIBILITY_MESSAGE_NAME;
+import static org.highmed.dsf.bpe.ConstantsMpcFeasibility.PROFILE_HIGHMED_TASK_REQUEST_MPCFEASIBILITY_PROCESS_URI_AND_LATEST_VERSION;
+import static org.highmed.dsf.bpe.ConstantsMpcFeasibility.PROFILE_HIGHMED_TASK_SINGLE_MEDIC_RESULT_MPCFEASIBILITY;
+import static org.highmed.dsf.bpe.ConstantsMpcFeasibility.PROFILE_HIGHMED_TASK_SINGLE_MEDIC_RESULT_MPCFEASIBILITY_MESSAGE_NAME;
+import static org.highmed.dsf.bpe.MpcFeasibilityProcessPluginDefinition.VERSION;
+import static org.junit.Assert.assertEquals;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.UUID;
+
+import org.highmed.dsf.fhir.validation.ResourceValidator;
+import org.highmed.dsf.fhir.validation.ResourceValidatorImpl;
+import org.highmed.dsf.fhir.validation.ValidationSupportRule;
+import org.hl7.fhir.r4.model.Base64BinaryType;
+import org.hl7.fhir.r4.model.BooleanType;
+import org.hl7.fhir.r4.model.Reference;
+import org.hl7.fhir.r4.model.ResourceType;
+import org.hl7.fhir.r4.model.StringType;
+import org.hl7.fhir.r4.model.Task;
+import org.hl7.fhir.r4.model.Task.ParameterComponent;
+import org.hl7.fhir.r4.model.Task.TaskIntent;
+import org.hl7.fhir.r4.model.Task.TaskOutputComponent;
+import org.hl7.fhir.r4.model.Task.TaskStatus;
+import org.hl7.fhir.r4.model.UnsignedIntType;
+import org.junit.ClassRule;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import ca.uhn.fhir.validation.ResultSeverityEnum;
+import ca.uhn.fhir.validation.ValidationResult;
+
+public class TaskProfileTest
+{
+	private static final Logger logger = LoggerFactory.getLogger(TaskProfileTest.class);
+
+	@ClassRule
+	public static final ValidationSupportRule validationRule = new ValidationSupportRule(VERSION,
+			Arrays.asList("highmed-task-base-0.5.0.xml", "highmed-group-0.5.0.xml",
+					"highmed-extension-group-id-0.5.0.xml", "highmed-research-study-0.5.0.xml",
+					"highmed-task-request-mpcfeasibility.xml", "highmed-task-execute-mpcfeasibility.xml",
+					"highmed-task-single-medic-result-mpcfeasibility.xml", "highmed-task-compute-mpcfeasibility.xml",
+					"highmed-task-multi-medic-result-mpcfeasibility.xml", "highmed-task-error-mpcfeasibility.xml"),
+			Arrays.asList("highmed-read-access-tag-0.5.0.xml", "highmed-bpmn-message-0.5.0.xml",
+					"highmed-mpcfeasibility.xml"),
+			Arrays.asList("highmed-read-access-tag-0.5.0.xml", "highmed-bpmn-message-0.5.0.xml",
+					"highmed-mpcfeasibility.xml"));
+
+	private ResourceValidator resourceValidator = new ResourceValidatorImpl(validationRule.getFhirContext(),
+			validationRule.getValidationSupport());
+
+	@Test
+	public void testTaskRequestMpcFeasibilityValid() throws Exception
+	{
+		Task task = createValidTaskRequestMpcFeasibility();
+
+		ValidationResult result = resourceValidator.validate(task);
+		ValidationSupportRule.logValidationMessages(logger, result);
+
+		assertEquals(0, result.getMessages().stream().filter(m -> ResultSeverityEnum.ERROR.equals(m.getSeverity())
+				|| ResultSeverityEnum.FATAL.equals(m.getSeverity())).count());
+	}
+
+	@Test
+	public void testTaskRequestMpcFeasibilityValidWithOutput() throws Exception
+	{
+		String groupId1 = "Group/" + UUID.randomUUID().toString();
+		String groupId2 = "Group/" + UUID.randomUUID().toString();
+
+		Task task = createValidTaskRequestMpcFeasibility();
+
+		TaskOutputComponent outParticipatingMedics1 = task.addOutput();
+		outParticipatingMedics1.setValue(new UnsignedIntType(5)).getType().addCoding()
+				.setSystem(CODESYSTEM_HIGHMED_MPCFEASIBILITY)
+				.setCode(CODESYSTEM_HIGHMED_MPCFEASIBILITY_VALUE_PARTICIPATING_MEDICS_COUNT);
+		outParticipatingMedics1.addExtension(EXTENSION_HIGHMED_GROUP_ID, new Reference(groupId1));
+		TaskOutputComponent outMultiMedicResult1 = task.addOutput();
+		outMultiMedicResult1.setValue(new UnsignedIntType(25)).getType().addCoding()
+				.setSystem(CODESYSTEM_HIGHMED_MPCFEASIBILITY).setCode("multi-medic-result");
+		outMultiMedicResult1.addExtension("http://highmed.org/fhir/StructureDefinition/extension-group-id",
+				new Reference(groupId1));
+
+		TaskOutputComponent outParticipatingMedics2 = task.addOutput();
+		outParticipatingMedics2.setValue(new UnsignedIntType(5)).getType().addCoding()
+				.setSystem(CODESYSTEM_HIGHMED_MPCFEASIBILITY)
+				.setCode(CODESYSTEM_HIGHMED_MPCFEASIBILITY_VALUE_PARTICIPATING_MEDICS_COUNT);
+		outParticipatingMedics2.addExtension(EXTENSION_HIGHMED_GROUP_ID, new Reference(groupId2));
+		TaskOutputComponent outMultiMedicResult2 = task.addOutput();
+		outMultiMedicResult2.setValue(new UnsignedIntType(25)).getType().addCoding()
+				.setSystem(CODESYSTEM_HIGHMED_MPCFEASIBILITY)
+				.setCode(CODESYSTEM_HIGHMED_MPCFEASIBILITY_VALUE_MULTI_MEDIC_RESULT);
+		outMultiMedicResult2.addExtension(EXTENSION_HIGHMED_GROUP_ID, new Reference(groupId2));
+
+		ValidationResult result = resourceValidator.validate(task);
+		ValidationSupportRule.logValidationMessages(logger, result);
+
+		assertEquals(0, result.getMessages().stream().filter(m -> ResultSeverityEnum.ERROR.equals(m.getSeverity())
+				|| ResultSeverityEnum.FATAL.equals(m.getSeverity())).count());
+	}
+
+	private Task createValidTaskRequestMpcFeasibility()
+	{
+		Task task = new Task();
+		task.getMeta().addProfile(PROFILE_HIGHMED_TASK_REQUEST_MPCFEASIBILITY);
+		task.setInstantiatesUri(PROFILE_HIGHMED_TASK_REQUEST_MPCFEASIBILITY_PROCESS_URI_AND_LATEST_VERSION);
+		task.setStatus(TaskStatus.REQUESTED);
+		task.setIntent(TaskIntent.ORDER);
+		task.setAuthoredOn(new Date());
+		task.getRequester().setType(ResourceType.Organization.name()).getIdentifier()
+				.setSystem(NAMINGSYSTEM_HIGHMED_ORGANIZATION_IDENTIFIER).setValue("MeDIC 1");
+		task.getRestriction().addRecipient().setType(ResourceType.Organization.name()).getIdentifier()
+				.setSystem(NAMINGSYSTEM_HIGHMED_ORGANIZATION_IDENTIFIER).setValue("MeDIC 1");
+
+		task.addInput().setValue(new StringType(PROFILE_HIGHMED_TASK_REQUEST_MPCFEASIBILITY_MESSAGE_NAME)).getType()
+				.addCoding().setSystem(CODESYSTEM_HIGHMED_BPMN).setCode(CODESYSTEM_HIGHMED_BPMN_VALUE_MESSAGE_NAME);
+		task.addInput().setValue(new Reference("ResearchStudy/" + UUID.randomUUID().toString())).getType().addCoding()
+				.setSystem(CODESYSTEM_HIGHMED_MPCFEASIBILITY)
+				.setCode(CODESYSTEM_HIGHMED_MPCFEASIBILITY_VALUE_RESEARCH_STUDY_REFERENCE);
+		task.addInput().setValue(new BooleanType(false)).getType().addCoding().setSystem(CODESYSTEM_HIGHMED_MPCFEASIBILITY)
+				.setCode(CODESYSTEM_HIGHMED_MPCFEASIBILITY_VALUE_NEEDS_RECORD_LINKAGE);
+		task.addInput().setValue(new BooleanType(false)).getType().addCoding().setSystem(CODESYSTEM_HIGHMED_MPCFEASIBILITY)
+				.setCode(CODESYSTEM_HIGHMED_MPCFEASIBILITY_VALUE_NEEDS_CONSENT_CHECK);
+
+		return task;
+	}
+
+	@Test
+	public void testTaskExecuteMpcFeasibilityValid() throws Exception
+	{
+		Task task = createValidTaskExecuteMpcFeasibility();
+
+		ValidationResult result = resourceValidator.validate(task);
+		ValidationSupportRule.logValidationMessages(logger, result);
+
+		assertEquals(0, result.getMessages().stream().filter(m -> ResultSeverityEnum.ERROR.equals(m.getSeverity())
+				|| ResultSeverityEnum.FATAL.equals(m.getSeverity())).count());
+	}
+
+	@Test
+	public void testTaskExecuteMpcFeasibilityValidWithBloomFilterConfig() throws Exception
+	{
+		Task task = createValidTaskExecuteMpcFeasibility();
+		task.addInput().setValue(new Base64BinaryType("TEST".getBytes(StandardCharsets.UTF_8))).getType().addCoding()
+				.setSystem(CODESYSTEM_HIGHMED_MPCFEASIBILITY)
+				.setCode(CODESYSTEM_HIGHMED_MPCFEASIBILITY_VALUE_BLOOM_FILTER_CONFIG);
+
+		ValidationResult result = resourceValidator.validate(task);
+		ValidationSupportRule.logValidationMessages(logger, result);
+
+		assertEquals(0, result.getMessages().stream().filter(m -> ResultSeverityEnum.ERROR.equals(m.getSeverity())
+				|| ResultSeverityEnum.FATAL.equals(m.getSeverity())).count());
+	}
+
+	private Task createValidTaskExecuteMpcFeasibility()
+	{
+		Task task = new Task();
+		task.getMeta().addProfile(PROFILE_HIGHMED_TASK_EXECUTE_MPCFEASIBILITY);
+		task.setInstantiatesUri(PROFILE_HIGHMED_TASK_EXECUTE_MPCFEASIBILITY_PROCESS_URI_AND_LATEST_VERSION);
+		task.setStatus(TaskStatus.REQUESTED);
+		task.setIntent(TaskIntent.ORDER);
+		task.setAuthoredOn(new Date());
+		task.getRequester().setType(ResourceType.Organization.name()).getIdentifier()
+				.setSystem(NAMINGSYSTEM_HIGHMED_ORGANIZATION_IDENTIFIER).setValue("MeDIC 1");
+		task.getRestriction().addRecipient().setType(ResourceType.Organization.name()).getIdentifier()
+				.setSystem(NAMINGSYSTEM_HIGHMED_ORGANIZATION_IDENTIFIER).setValue("MeDIC 2");
+
+		task.addInput().setValue(new StringType(PROFILE_HIGHMED_TASK_EXECUTE_MPCFEASIBILITY_MESSAGE_NAME)).getType()
+				.addCoding().setSystem(CODESYSTEM_HIGHMED_BPMN).setCode(CODESYSTEM_HIGHMED_BPMN_VALUE_MESSAGE_NAME);
+		task.addInput().setValue(new StringType(UUID.randomUUID().toString())).getType().addCoding()
+				.setSystem(CODESYSTEM_HIGHMED_BPMN).setCode(CODESYSTEM_HIGHMED_BPMN_VALUE_BUSINESS_KEY);
+		task.addInput().setValue(new StringType(UUID.randomUUID().toString())).getType().addCoding()
+				.setSystem(CODESYSTEM_HIGHMED_BPMN).setCode(CODESYSTEM_HIGHMED_BPMN_VALUE_CORRELATION_KEY);
+
+		task.addInput().setValue(new Reference("ResearchStudy/" + UUID.randomUUID().toString())).getType().addCoding()
+				.setSystem(CODESYSTEM_HIGHMED_MPCFEASIBILITY)
+				.setCode(CODESYSTEM_HIGHMED_MPCFEASIBILITY_VALUE_RESEARCH_STUDY_REFERENCE);
+		task.addInput().setValue(new BooleanType(false)).getType().addCoding().setSystem(CODESYSTEM_HIGHMED_MPCFEASIBILITY)
+				.setCode(CODESYSTEM_HIGHMED_MPCFEASIBILITY_VALUE_NEEDS_RECORD_LINKAGE);
+		task.addInput().setValue(new BooleanType(false)).getType().addCoding().setSystem(CODESYSTEM_HIGHMED_MPCFEASIBILITY)
+				.setCode(CODESYSTEM_HIGHMED_MPCFEASIBILITY_VALUE_NEEDS_CONSENT_CHECK);
+
+		return task;
+	}
+
+	@Test
+	public void testTaskSingleMedicResultMpcFeasibilityUnsignedIntResultValid() throws Exception
+	{
+		Task task = createValidTaskSingleMedicResultMpcFeasibilityUnsignedIntResult();
+
+		ValidationResult result = resourceValidator.validate(task);
+		ValidationSupportRule.logValidationMessages(logger, result);
+
+		assertEquals(0, result.getMessages().stream().filter(m -> ResultSeverityEnum.ERROR.equals(m.getSeverity())
+				|| ResultSeverityEnum.FATAL.equals(m.getSeverity())).count());
+	}
+
+	@Test
+	public void testTaskSingleMedicResultMpcFeasibilityReferenceResultValid() throws Exception
+	{
+		Task task = createValidTaskSingleMedicResultMpcFeasibilityReferenceResult();
+
+		ValidationResult result = resourceValidator.validate(task);
+		ValidationSupportRule.logValidationMessages(logger, result);
+
+		assertEquals(0, result.getMessages().stream().filter(m -> ResultSeverityEnum.ERROR.equals(m.getSeverity())
+				|| ResultSeverityEnum.FATAL.equals(m.getSeverity())).count());
+	}
+
+	private Task createValidTaskSingleMedicResultMpcFeasibility()
+	{
+		Task task = new Task();
+		task.getMeta().addProfile(PROFILE_HIGHMED_TASK_SINGLE_MEDIC_RESULT_MPCFEASIBILITY);
+		task.setInstantiatesUri(PROFILE_HIGHMED_TASK_COMPUTE_MPCFEASIBILITY_PROCESS_URI_AND_LATEST_VERSION);
+		task.setStatus(TaskStatus.REQUESTED);
+		task.setIntent(TaskIntent.ORDER);
+		task.setAuthoredOn(new Date());
+		task.getRequester().setType(ResourceType.Organization.name()).getIdentifier()
+				.setSystem(NAMINGSYSTEM_HIGHMED_ORGANIZATION_IDENTIFIER).setValue("MeDIC 2");
+		task.getRestriction().addRecipient().setType(ResourceType.Organization.name()).getIdentifier()
+				.setSystem(NAMINGSYSTEM_HIGHMED_ORGANIZATION_IDENTIFIER).setValue("TTP");
+
+		task.addInput().setValue(new StringType(PROFILE_HIGHMED_TASK_SINGLE_MEDIC_RESULT_MPCFEASIBILITY_MESSAGE_NAME))
+				.getType().addCoding().setSystem(CODESYSTEM_HIGHMED_BPMN)
+				.setCode(CODESYSTEM_HIGHMED_BPMN_VALUE_MESSAGE_NAME);
+		task.addInput().setValue(new StringType(UUID.randomUUID().toString())).getType().addCoding()
+				.setSystem(CODESYSTEM_HIGHMED_BPMN).setCode(CODESYSTEM_HIGHMED_BPMN_VALUE_BUSINESS_KEY);
+		task.addInput().setValue(new StringType(UUID.randomUUID().toString())).getType().addCoding()
+				.setSystem(CODESYSTEM_HIGHMED_BPMN).setCode(CODESYSTEM_HIGHMED_BPMN_VALUE_CORRELATION_KEY);
+
+		return task;
+	}
+
+	private Task createValidTaskSingleMedicResultMpcFeasibilityUnsignedIntResult()
+	{
+		Task task = createValidTaskSingleMedicResultMpcFeasibility();
+
+		String groupId1 = "Group/" + UUID.randomUUID().toString();
+		String groupId2 = "Group/" + UUID.randomUUID().toString();
+
+		ParameterComponent inSingleMedicResult1 = task.addInput();
+		inSingleMedicResult1.setValue(new UnsignedIntType(5)).getType().addCoding()
+				.setSystem(CODESYSTEM_HIGHMED_MPCFEASIBILITY)
+				.setCode(CODESYSTEM_HIGHMED_MPCFEASIBILITY_VALUE_SINGLE_MEDIC_RESULT);
+		inSingleMedicResult1.addExtension(EXTENSION_HIGHMED_GROUP_ID, new Reference(groupId1));
+		ParameterComponent inSingleMedicResult2 = task.addInput();
+		inSingleMedicResult2.setValue(new UnsignedIntType(10)).getType().addCoding()
+				.setSystem(CODESYSTEM_HIGHMED_MPCFEASIBILITY)
+				.setCode(CODESYSTEM_HIGHMED_MPCFEASIBILITY_VALUE_SINGLE_MEDIC_RESULT);
+		inSingleMedicResult2.addExtension(EXTENSION_HIGHMED_GROUP_ID, new Reference(groupId2));
+
+		return task;
+	}
+
+	private Task createValidTaskSingleMedicResultMpcFeasibilityReferenceResult()
+	{
+		Task task = createValidTaskSingleMedicResultMpcFeasibility();
+
+		String groupId1 = "Group/" + UUID.randomUUID().toString();
+		String groupId2 = "Group/" + UUID.randomUUID().toString();
+
+		ParameterComponent inSingleMedicResult1 = task.addInput();
+		inSingleMedicResult1.setValue(new Reference("Binary/" + UUID.randomUUID().toString())).getType().addCoding()
+				.setSystem(CODESYSTEM_HIGHMED_MPCFEASIBILITY)
+				.setCode(CODESYSTEM_HIGHMED_MPCFEASIBILITY_VALUE_SINGLE_MEDIC_RESULT_REFERENCE);
+		inSingleMedicResult1.addExtension(EXTENSION_HIGHMED_GROUP_ID, new Reference(groupId1));
+		ParameterComponent inSingleMedicResult2 = task.addInput();
+		inSingleMedicResult2.setValue(new Reference("Binary/" + UUID.randomUUID().toString())).getType().addCoding()
+				.setSystem(CODESYSTEM_HIGHMED_MPCFEASIBILITY)
+				.setCode(CODESYSTEM_HIGHMED_MPCFEASIBILITY_VALUE_SINGLE_MEDIC_RESULT_REFERENCE);
+		inSingleMedicResult2.addExtension(EXTENSION_HIGHMED_GROUP_ID, new Reference(groupId2));
+
+		return task;
+	}
+
+	@Test
+	public void testTaskComputeMpcFeasibilityValid() throws Exception
+	{
+		Task task = createValidTaskComputeMpcFeasibility();
+
+		ValidationResult result = resourceValidator.validate(task);
+		ValidationSupportRule.logValidationMessages(logger, result);
+
+		assertEquals(0, result.getMessages().stream().filter(m -> ResultSeverityEnum.ERROR.equals(m.getSeverity())
+				|| ResultSeverityEnum.FATAL.equals(m.getSeverity())).count());
+	}
+
+	private Task createValidTaskComputeMpcFeasibility()
+	{
+		Task task = new Task();
+		task.getMeta().addProfile(PROFILE_HIGHMED_TASK_COMPUTE_MPCFEASIBILITY);
+		task.setInstantiatesUri(PROFILE_HIGHMED_TASK_COMPUTE_MPCFEASIBILITY_PROCESS_URI_AND_LATEST_VERSION);
+		task.setStatus(TaskStatus.REQUESTED);
+		task.setIntent(TaskIntent.ORDER);
+		task.setAuthoredOn(new Date());
+		task.getRequester().setType(ResourceType.Organization.name()).getIdentifier()
+				.setSystem(NAMINGSYSTEM_HIGHMED_ORGANIZATION_IDENTIFIER).setValue("MeDIC 1");
+		task.getRestriction().addRecipient().setType(ResourceType.Organization.name()).getIdentifier()
+				.setSystem(NAMINGSYSTEM_HIGHMED_ORGANIZATION_IDENTIFIER).setValue("TTP");
+
+		task.addInput().setValue(new StringType(PROFILE_HIGHMED_TASK_COMPUTE_MPCFEASIBILITY_MESSAGE_NAME)).getType()
+				.addCoding().setSystem(CODESYSTEM_HIGHMED_BPMN).setCode(CODESYSTEM_HIGHMED_BPMN_VALUE_MESSAGE_NAME);
+		task.addInput().setValue(new StringType(UUID.randomUUID().toString())).getType().addCoding()
+				.setSystem(CODESYSTEM_HIGHMED_BPMN).setCode(CODESYSTEM_HIGHMED_BPMN_VALUE_BUSINESS_KEY);
+
+		task.addInput().setValue(new StringType(UUID.randomUUID().toString())).getType().addCoding()
+				.setSystem(CODESYSTEM_HIGHMED_MPCFEASIBILITY)
+				.setCode(CODESYSTEM_HIGHMED_MPCFEASIBILITY_VALUE_PARTICIPATING_MEDIC_CORRELATION_KEY);
+		task.addInput().setValue(new StringType(UUID.randomUUID().toString())).getType().addCoding()
+				.setSystem(CODESYSTEM_HIGHMED_MPCFEASIBILITY)
+				.setCode(CODESYSTEM_HIGHMED_MPCFEASIBILITY_VALUE_PARTICIPATING_MEDIC_CORRELATION_KEY);
+
+		task.addInput().setValue(new BooleanType(false)).getType().addCoding().setSystem(CODESYSTEM_HIGHMED_MPCFEASIBILITY)
+				.setCode(CODESYSTEM_HIGHMED_MPCFEASIBILITY_VALUE_NEEDS_RECORD_LINKAGE);
+
+		return task;
+	}
+
+	@Test
+	public void testTaskMultiMedicResultMpcFeasibilityValid() throws Exception
+	{
+		Task task = createValidTaskMultiMedicResultMpcFeasibility();
+
+		ValidationResult result = resourceValidator.validate(task);
+		ValidationSupportRule.logValidationMessages(logger, result);
+
+		assertEquals(0, result.getMessages().stream().filter(m -> ResultSeverityEnum.ERROR.equals(m.getSeverity())
+				|| ResultSeverityEnum.FATAL.equals(m.getSeverity())).count());
+	}
+
+	private Task createValidTaskMultiMedicResultMpcFeasibility()
+	{
+		Task task = new Task();
+		task.getMeta().addProfile(PROFILE_HIGHMED_TASK_MULTI_MEDIC_RESULT_MPCFEASIBILITY);
+		task.setInstantiatesUri(PROFILE_HIGHMED_TASK_REQUEST_MPCFEASIBILITY_PROCESS_URI_AND_LATEST_VERSION);
+		task.setStatus(TaskStatus.REQUESTED);
+		task.setIntent(TaskIntent.ORDER);
+		task.setAuthoredOn(new Date());
+		task.getRequester().setType(ResourceType.Organization.name()).getIdentifier()
+				.setSystem(NAMINGSYSTEM_HIGHMED_ORGANIZATION_IDENTIFIER).setValue("TTP");
+		task.getRestriction().addRecipient().setType(ResourceType.Organization.name()).getIdentifier()
+				.setSystem(NAMINGSYSTEM_HIGHMED_ORGANIZATION_IDENTIFIER).setValue("MeDIC 1");
+
+		task.addInput().setValue(new StringType(PROFILE_HIGHMED_TASK_MULTI_MEDIC_RESULT_MPCFEASIBILITY_MESSAGE_NAME))
+				.getType().addCoding().setSystem(CODESYSTEM_HIGHMED_BPMN)
+				.setCode(CODESYSTEM_HIGHMED_BPMN_VALUE_MESSAGE_NAME);
+		task.addInput().setValue(new StringType(UUID.randomUUID().toString())).getType().addCoding()
+				.setSystem(CODESYSTEM_HIGHMED_BPMN).setCode(CODESYSTEM_HIGHMED_BPMN_VALUE_BUSINESS_KEY);
+
+		String groupId1 = "Group/" + UUID.randomUUID().toString();
+		String groupId2 = "Group/" + UUID.randomUUID().toString();
+
+		ParameterComponent inParticipatingMedics1 = task.addInput();
+		inParticipatingMedics1.setValue(new UnsignedIntType(5)).getType().addCoding()
+				.setSystem(CODESYSTEM_HIGHMED_MPCFEASIBILITY)
+				.setCode(CODESYSTEM_HIGHMED_MPCFEASIBILITY_VALUE_PARTICIPATING_MEDICS_COUNT);
+		inParticipatingMedics1.addExtension(EXTENSION_HIGHMED_GROUP_ID, new Reference(groupId1));
+		ParameterComponent inMultiMedicResult1 = task.addInput();
+		inMultiMedicResult1.setValue(new UnsignedIntType(25)).getType().addCoding()
+				.setSystem(CODESYSTEM_HIGHMED_MPCFEASIBILITY)
+				.setCode(CODESYSTEM_HIGHMED_MPCFEASIBILITY_VALUE_MULTI_MEDIC_RESULT);
+		inMultiMedicResult1.addExtension(EXTENSION_HIGHMED_GROUP_ID, new Reference(groupId1));
+
+		ParameterComponent inParticipatingMedics2 = task.addInput();
+		inParticipatingMedics2.setValue(new UnsignedIntType(5)).getType().addCoding()
+				.setSystem(CODESYSTEM_HIGHMED_MPCFEASIBILITY)
+				.setCode(CODESYSTEM_HIGHMED_MPCFEASIBILITY_VALUE_PARTICIPATING_MEDICS_COUNT);
+		inParticipatingMedics2.addExtension(EXTENSION_HIGHMED_GROUP_ID, new Reference(groupId2));
+		ParameterComponent inMultiMedicResult2 = task.addInput();
+		inMultiMedicResult2.setValue(new UnsignedIntType(25)).getType().addCoding()
+				.setSystem(CODESYSTEM_HIGHMED_MPCFEASIBILITY)
+				.setCode(CODESYSTEM_HIGHMED_MPCFEASIBILITY_VALUE_MULTI_MEDIC_RESULT);
+		inMultiMedicResult2.addExtension(EXTENSION_HIGHMED_GROUP_ID, new Reference(groupId2));
+
+		return task;
+	}
+
+	@Test
+	public void testTaskErrorMpcFeasibilityValid() throws Exception
+	{
+		Task task = createValidTaskErrorMpcFeasibility();
+
+		ValidationResult result = resourceValidator.validate(task);
+		ValidationSupportRule.logValidationMessages(logger, result);
+
+		assertEquals(0, result.getMessages().stream().filter(m -> ResultSeverityEnum.ERROR.equals(m.getSeverity())
+				|| ResultSeverityEnum.FATAL.equals(m.getSeverity())).count());
+	}
+
+	private Task createValidTaskErrorMpcFeasibility()
+	{
+		Task task = new Task();
+		task.getMeta().addProfile(PROFILE_HIGHMED_TASK_ERROR_MPCFEASIBILITY);
+		task.setInstantiatesUri(PROFILE_HIGHMED_TASK_REQUEST_MPCFEASIBILITY_PROCESS_URI_AND_LATEST_VERSION);
+		task.setStatus(TaskStatus.REQUESTED);
+		task.setIntent(TaskIntent.ORDER);
+		task.setAuthoredOn(new Date());
+		task.getRequester().setType(ResourceType.Organization.name()).getIdentifier()
+				.setSystem(NAMINGSYSTEM_HIGHMED_ORGANIZATION_IDENTIFIER).setValue("TTP");
+		task.getRestriction().addRecipient().setType(ResourceType.Organization.name()).getIdentifier()
+				.setSystem(NAMINGSYSTEM_HIGHMED_ORGANIZATION_IDENTIFIER).setValue("MeDIC 1");
+
+		task.addInput().setValue(new StringType(PROFILE_HIGHMED_TASK_ERROR_MPCFEASIBILITY_MESSAGE_NAME)).getType()
+				.addCoding().setSystem(CODESYSTEM_HIGHMED_BPMN).setCode(CODESYSTEM_HIGHMED_BPMN_VALUE_MESSAGE_NAME);
+		task.addInput().setValue(new StringType(UUID.randomUUID().toString())).getType().addCoding()
+				.setSystem(CODESYSTEM_HIGHMED_BPMN).setCode(CODESYSTEM_HIGHMED_BPMN_VALUE_BUSINESS_KEY);
+
+		ParameterComponent error = task.addInput();
+		error.setValue(new StringType(
+				"An error occurred while calculating the multi medic mpcfeasibility result for all defined cohorts"))
+				.getType().addCoding().setSystem(CODESYSTEM_HIGHMED_BPMN).setCode(CODESYSTEM_HIGHMED_BPMN_VALUE_ERROR);
+
+		return task;
+	}
+}

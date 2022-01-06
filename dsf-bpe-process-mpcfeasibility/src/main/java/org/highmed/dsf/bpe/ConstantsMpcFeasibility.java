@@ -1,0 +1,61 @@
+package org.highmed.dsf.bpe;
+
+import static org.highmed.dsf.bpe.ConstantsBase.PROCESS_HIGHMED_URI_BASE;
+import static org.highmed.dsf.bpe.MpcFeasibilityProcessPluginDefinition.VERSION;
+
+public interface ConstantsMpcFeasibility
+{
+	String BPMN_EXECUTION_VARIABLE_RESEARCH_STUDY = "researchStudy";
+	String BPMN_EXECUTION_VARIABLE_NEEDS_CONSENT_CHECK = "needsConsentCheck";
+	String BPMN_EXECUTION_VARIABLE_COHORTS = "cohorts";
+	String BPMN_EXECUTION_VARIABLE_QUERIES = "queries";
+	String BPMN_EXECUTION_VARIABLE_QUERY_RESULTS = "queryResults";
+	String BPMN_EXECUTION_VARIABLE_FINAL_QUERY_RESULTS = "finalQueryResults";
+
+	String BPMN_EXECUTION_ERROR_CODE_MULTI_MEDIC_RESULT = "errorMultiMedicMpcFeasibilityResult";
+
+	// Must be 3 or larger, as otherwise it is possible to draw conclusions about the individual MeDICs
+	// (if I already know the cohort size in my MeDIC)
+	int MIN_PARTICIPATING_MEDICS = 3;
+	int MIN_COHORT_DEFINITIONS = 1;
+	String MPCFEASIBILITY_QUERY_PREFIX = "SELECT COUNT";
+
+	String CODESYSTEM_HIGHMED_MPCFEASIBILITY = "http://highmed.org/fhir/CodeSystem/mpcfeasibility";
+	String CODESYSTEM_HIGHMED_MPCFEASIBILITY_VALUE_PARTICIPATING_MEDIC_CORRELATION_KEY = "medic-correlation-key";
+	String CODESYSTEM_HIGHMED_MPCFEASIBILITY_VALUE_NEEDS_CONSENT_CHECK = "needs-consent-check";
+	String CODESYSTEM_HIGHMED_MPCFEASIBILITY_VALUE_SINGLE_MEDIC_RESULT = "single-medic-result";
+	String CODESYSTEM_HIGHMED_MPCFEASIBILITY_VALUE_SINGLE_MEDIC_RESULT_REFERENCE = "single-medic-result-reference";
+	String CODESYSTEM_HIGHMED_MPCFEASIBILITY_VALUE_PARTICIPATING_MEDICS_COUNT = "participating-medics";
+	String CODESYSTEM_HIGHMED_MPCFEASIBILITY_VALUE_NOT_ENOUGH_PARTICIPATION = "not-enough-participation";
+	String CODESYSTEM_HIGHMED_MPCFEASIBILITY_VALUE_MULTI_MEDIC_RESULT = "multi-medic-result";
+	String CODESYSTEM_HIGHMED_MPCFEASIBILITY_VALUE_RESEARCH_STUDY_REFERENCE = "research-study-reference";
+
+	String PROFILE_HIGHMED_TASK_REQUEST_MPCFEASIBILITY = "http://highmed.org/fhir/StructureDefinition/task-request-mpcfeasibility";
+	String PROFILE_HIGHMED_TASK_REQUEST_MPCFEASIBILITY_PROCESS_URI = PROCESS_HIGHMED_URI_BASE + "requestMpcFeasibility/";
+	String PROFILE_HIGHMED_TASK_REQUEST_MPCFEASIBILITY_PROCESS_URI_AND_LATEST_VERSION = PROFILE_HIGHMED_TASK_REQUEST_MPCFEASIBILITY_PROCESS_URI
+			+ VERSION;
+	String PROFILE_HIGHMED_TASK_REQUEST_MPCFEASIBILITY_MESSAGE_NAME = "requestMpcFeasibilityMessage";
+
+	String PROFILE_HIGHMED_TASK_LOCAL_SERVICES_PROCESS_URI = PROCESS_HIGHMED_URI_BASE + "localServicesIntegration/";
+
+	String PROFILE_HIGHMED_TASK_EXECUTE_MPCFEASIBILITY = "http://highmed.org/fhir/StructureDefinition/task-execute-mpcfeasibility";
+	String PROFILE_HIGHMED_TASK_EXECUTE_MPCFEASIBILITY_PROCESS_URI = PROCESS_HIGHMED_URI_BASE + "executeMpcFeasibility/";
+	String PROFILE_HIGHMED_TASK_EXECUTE_MPCFEASIBILITY_PROCESS_URI_AND_LATEST_VERSION = PROFILE_HIGHMED_TASK_EXECUTE_MPCFEASIBILITY_PROCESS_URI
+			+ VERSION;
+	String PROFILE_HIGHMED_TASK_EXECUTE_MPCFEASIBILITY_MESSAGE_NAME = "executeMpcFeasibilityMessage";
+
+	String PROFILE_HIGHMED_TASK_COMPUTE_MPCFEASIBILITY = "http://highmed.org/fhir/StructureDefinition/task-compute-mpcfeasibility";
+	String PROFILE_HIGHMED_TASK_COMPUTE_MPCFEASIBILITY_PROCESS_URI = PROCESS_HIGHMED_URI_BASE + "computeMpcFeasibility/";
+	String PROFILE_HIGHMED_TASK_COMPUTE_MPCFEASIBILITY_PROCESS_URI_AND_LATEST_VERSION = PROFILE_HIGHMED_TASK_COMPUTE_MPCFEASIBILITY_PROCESS_URI
+			+ VERSION;
+	String PROFILE_HIGHMED_TASK_COMPUTE_MPCFEASIBILITY_MESSAGE_NAME = "computeMpcFeasibilityMessage";
+
+	String PROFILE_HIGHMED_TASK_SINGLE_MEDIC_RESULT_MPCFEASIBILITY = "http://highmed.org/fhir/StructureDefinition/task-single-medic-result-mpcfeasibility";
+	String PROFILE_HIGHMED_TASK_SINGLE_MEDIC_RESULT_MPCFEASIBILITY_MESSAGE_NAME = "resultSingleMedicMpcFeasibilityMessage";
+
+	String PROFILE_HIGHMED_TASK_MULTI_MEDIC_RESULT_MPCFEASIBILITY = "http://highmed.org/fhir/StructureDefinition/task-multi-medic-result-mpcfeasibility";
+	String PROFILE_HIGHMED_TASK_MULTI_MEDIC_RESULT_MPCFEASIBILITY_MESSAGE_NAME = "resultMultiMedicMpcFeasibilityMessage";
+
+	String PROFILE_HIGHMED_TASK_ERROR_MPCFEASIBILITY = "http://highmed.org/fhir/StructureDefinition/task-multi-medic-error-mpcfeasibility";
+	String PROFILE_HIGHMED_TASK_ERROR_MPCFEASIBILITY_MESSAGE_NAME = "errorMultiMedicMpcFeasibilityMessage";
+}
